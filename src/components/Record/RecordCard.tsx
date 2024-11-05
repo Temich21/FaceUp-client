@@ -1,57 +1,43 @@
+import React from 'react'
 import { Category } from '@/stores/recordStore'
-import { Label } from '../ui/label'
-import { Button } from '../ui/button'
-import useRecord from '@/hooks/useRecord'
-import { useState } from 'react'
-import UpdateRecord from './UpdateRecord'
 
-export type RecordCardT = {
-    id: string
+type RecordCardInListT = {
     title: string
     category: Category
     details: string
 }
 
-const RecordCardInList = ({ id, title, category, details }: RecordCardT) => {
-    const { deleteRecordMutation } = useRecord()
-    const [isUpdated, setIsUpdated] = useState<boolean>(false)
-
-    const handleDeleteRecord = () => {
-        deleteRecordMutation.mutate(id)
-    }
+const RecordCard = React.memo(({ title, category, details }: RecordCardInListT) => {
+    const MAX_LENGTH = 100
+    const isLongText = details.length > MAX_LENGTH
 
     return (
-        isUpdated ? (
-            <UpdateRecord
-                id={id}
-                title={title}
-                category={category}
-                details={details}
-                setIsUpdated={setIsUpdated}
-            />
-        ) : (
-            <div className="flex flex-col gap-3">
-                <Label className="text-xl">
-                    Title: {title}
-                </Label>
-                <Label className="text-md">
-                    Category: {category}
-                </Label>
-                <div>
-                    <Label className="text-md">
-                        Details:
-                    </Label>
-                    <div className="mt-2">
-                        {details}
-                    </div>
+        <div className="border-2 border-black rounded-md p-4 cursor-pointer">
+            <h2 className="text-xl font-semibold">{title}</h2>
+            <div className="text-lg mb-1">{category}</div>
+            <div className="relative overflow-hidden">
+                <div
+                    className={`
+            text-base leading-5 text-gray-800
+            ${isLongText ? 'line-clamp-2' : ''}
+          `}
+                    style={{
+                        display: isLongText ? '-webkit-box' : 'block',
+                        WebkitBoxOrient: isLongText ? 'vertical' : undefined,
+                        WebkitLineClamp: isLongText ? 2 : undefined,
+                        overflow: isLongText ? 'hidden' : undefined,
+                    }}
+                >
+                    {details}
                 </div>
-                <div className="flex justify-end gap-5">
-                    <Button variant="blue" onClick={() => setIsUpdated(true)}>Update</Button>
-                    <Button onClick={handleDeleteRecord}>Delete</Button>
-                </div>
+                {isLongText && (
+                    <div
+                        className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-white via-white/50 to-transparent pointer-events-none"
+                    />
+                )}
             </div>
-        )
+        </div>
     )
-}
+})
 
-export default RecordCardInList
+export default RecordCard

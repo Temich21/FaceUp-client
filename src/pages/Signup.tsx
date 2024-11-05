@@ -1,12 +1,5 @@
-import AuthForm from "@/components/Auth/AuthForm"
-import useAuth from "@/hooks/useAuth"
+import SignupForm from "@/components/Auth/SignupForm";
 
-function Singup() {
-    const { signinMutation } = useAuth()
+const Signup = () => <SignupForm />
 
-    return (
-        <AuthForm authAction={signinMutation} isSingup={true} />
-    )
-}
-
-export default Singup
+export default Signup

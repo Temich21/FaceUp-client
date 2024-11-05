@@ -1,3 +1,9 @@
+import { useState } from "react"
+import { useForm } from "react-hook-form"
+import useRecord from "@/hooks/useRecord"
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { FormRecord, TextField, CategorySelect, FileAdd } from "./RecordForm"
 import {
     Dialog,
     DialogContent,
@@ -7,41 +13,35 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Input } from "../ui/input"
-import { Label } from "../ui/label"
-import { Textarea } from "../ui/textarea"
-import { Controller, useForm } from "react-hook-form"
 import { Category } from "@/stores/recordStore"
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
-import useRecord from "@/hooks/useRecord"
 
-type RecordCredentions = {
-    title: string
-    category: Category
-    details: string
-}
+export const RecordSchema = z.object({
+    title: z.string().nonempty("Please enter a title"),
+    category: z.nativeEnum(Category, { errorMap: () => ({ message: "Please choose a category" }) }),
+    details: z.string().nonempty("Please enter details"),
+})
 
 const CreateNewRecord = () => {
     const { postCreateRecordMutation } = useRecord()
+    const [files, setFiles] = useState<File[]>([])
+
+    const form = useForm<z.infer<typeof RecordSchema>>({
+        resolver: zodResolver(RecordSchema),
+    })
 
     const {
         register,
         handleSubmit,
         control,
-        reset
-    } = useForm<RecordCredentions>()
+        reset,
+        formState: { errors },
+    } = form
 
-    const onSubmit = (recordCredentials: RecordCredentions) => {
-        postCreateRecordMutation.mutate(recordCredentials, {
+    const onSubmit = (recordCredentials: z.infer<typeof RecordSchema>) => {
+        postCreateRecordMutation.mutate({ ...recordCredentials, files }, {
             onSuccess: () => {
                 reset()
+                setFiles([])
             },
         })
     }
@@ -51,67 +51,37 @@ const CreateNewRecord = () => {
             <DialogTrigger>
                 <Button variant={"blue"}>Create New Record</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Create New Record</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="title" className="text-left text-md">
-                            Title
-                        </Label>
-                        <Input
-                            id="title"
-                            className="col-span-3"
-                            {...register("title", {
-                                required: "Please Enter Title!",
-                            })}
-                        />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="category" className="text-left text-md">
-                            Category
-                        </Label>
-                        <Controller
-                            name="category"
-                            control={control}
-                            rules={{ required: "Please Choose a category!" }}
-                            render={({ field }) => (
-                                <Select
-                                    onValueChange={field.onChange}
-                                    value={field.value}
-                                >
-                                    <SelectTrigger id="category" className="col-span-3 w-[230px]">
-                                        <SelectValue placeholder="Choose category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem value="Bullying, bad behaviour">Bullying, bad behaviour</SelectItem>
-                                            <SelectItem value="Learning difficulties">Learning difficulties</SelectItem>
-                                            <SelectItem value="Problems at home">Problems at home</SelectItem>
-                                            <SelectItem value="Something else">Something else</SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
-                            )}
-                        />
-                    </div>
-                    <div className="grid grid-cols-1 items-start gap-2">
-                        <Label htmlFor="details" className="text-left text-md">
-                            Description
-                        </Label>
-                        <Textarea
-                            id="details"
-                            className="w-full"
-                            {...register("details", {
-                                required: "Please Enter Details!",
-                            })}
-                        />
-                    </div>
+                <FormRecord onSubmit={handleSubmit(onSubmit)}>
+                    <TextField
+                        label="Title"
+                        id="title"
+                        register={register}
+                        error={errors.title?.message}
+                    />
+                    <CategorySelect
+                        control={control}
+                        error={errors.category?.message}
+                        name="category"
+                    />
+                    <TextField
+                        label="Description"
+                        id="details"
+                        type="textarea"
+                        register={register}
+                        error={errors.details?.message}
+                    />
+                    <FileAdd
+                        files={files}
+                        setFiles={setFiles}
+                    />
                     <DialogFooter>
-                        <Button type="submit">Save changes</Button>
+                        <Button type="submit">Create Record</Button>
                     </DialogFooter>
-                </form>
+                </FormRecord>
             </DialogContent>
         </Dialog>
     )

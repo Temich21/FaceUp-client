@@ -4,26 +4,28 @@ import useRecord from "@/hooks/useRecord";
 import { useEffect } from "react";
 
 export function RootLayout() {
-    const { user } = useMainSt()
-    if (user == null) return <Navigate to="/signin" />
-
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { user } = useMainSt();
     const { getAllRecordsMutation } = useRecord()
 
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
-        getAllRecordsMutation.mutate()
+        getAllRecordsMutation.mutate();
     }, [])
+
+    if (user == null) {
+        return <Navigate to="/signin" />;
+    }
 
     if (getAllRecordsMutation.isPending) {
         return (
-            <div className="h-screen w-screen flex justify-center items-center text-5xl">
+            <div className="w-screen h-screen flex justify-center items-center text-5xl">
                 Loading...
             </div>
-        )
+        );
     }
 
-    return <div className="w-screen h-screen flex flex-col items-center bg-gray-100 gap-10">
-        <Outlet />
-    </div>
+    return (
+        <div className="w-screen min-h-screen flex flex-col items-center bg-gray-100 gap-10">
+            <Outlet />
+        </div>
+    );
 }

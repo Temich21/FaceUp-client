@@ -4,6 +4,7 @@ import { postSignin, RequestBodySignin, postSignup, RequestBodySignup, getLogout
 import ResponseBodyAuth from '@/api/auth/responseType';
 import { toast } from 'react-toastify'
 import { AxiosResponse } from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 type useAuth = {
   signupMutation: UseMutationResult<ResponseBodyAuth, Error, RequestBodySignup, unknown>,
@@ -13,12 +14,17 @@ type useAuth = {
 
 const useAuth = (): useAuth => {
   const { setUser } = useMainSt()
+  const navigate = useNavigate()
 
   const signupMutation = useMutation({
     mutationFn: (credentials: RequestBodySignup) => postSignup(credentials).then(res => res.data),
     onSuccess: (data) => {
       setUser(data.user)
-      toast.success("Sign In successful")
+
+      localStorage.setItem("accessToken", data.accessToken)
+      localStorage.setItem("refreshToken", data.refreshToken)
+
+      toast.success("Sign Up successful")
     },
     onError: (error) => {
       toast.error(error.message)
@@ -29,6 +35,10 @@ const useAuth = (): useAuth => {
     mutationFn: (credentials: RequestBodySignin) => postSignin(credentials).then(res => res.data),
     onSuccess: (data) => {
       setUser(data.user)
+
+      localStorage.setItem("accessToken", data.accessToken)
+      localStorage.setItem("refreshToken", data.refreshToken)
+
       toast.success("Sign In successful")
     },
     onError: (error) => {
@@ -40,6 +50,11 @@ const useAuth = (): useAuth => {
     mutationFn: () => getLogout(),
     onSuccess: () => {
       setUser(null)
+
+      localStorage.removeItem("accessToken")
+      localStorage.removeItem("refreshToken")
+
+      navigate("/signin")
       toast.success("Log Out successful")
     },
     onError: (error) => {

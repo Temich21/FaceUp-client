@@ -1,21 +1,40 @@
-import RecordCardInList from "@/components/Record/RecordCardInList"
-import { Button } from "@/components/ui/button"
-import useAuth from "@/hooks/useAuth"
+import { useState } from "react"
 import { useMainSt } from "@/stores/main"
+import useAuth from "@/hooks/useAuth"
+import useRecord from "@/hooks/useRecord"
+import RecordCard from "@/components/Record/RecordCard"
+import { Button } from "@/components/ui/button"
 import CreateNewRecord from "@/components/Record/CreateNewRecord"
 import {
   Dialog,
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import RecordCard from "@/components/Record/RecordCard"
+import ChoosenRecordCard from "@/components/Record/ChoosenRecordCard"
 
-function Home() {
-  const { records } = useMainSt()
+const Home = () => {
+  const { records, setChoosenRecord } = useMainSt()
+
   const { logoutMutation } = useAuth()
+  const { getRecordutation } = useRecord()
+
+  const [loadingRecordId, setLoadingRecordId] = useState<string | null>(null)
 
   const handleLogout = () => {
     logoutMutation.mutate()
+  }
+
+  const handleGetRecord = (recordId: string) => {
+    setLoadingRecordId(recordId)
+    getRecordutation.mutate(recordId, {
+      onSuccess: (data) => {
+        setChoosenRecord(data)
+        setLoadingRecordId(null)
+      },
+      onError: () => {
+        setLoadingRecordId(null);
+      },
+    })
   }
 
   return (
@@ -31,8 +50,11 @@ function Home() {
         {records.length > 0 ? (
           records.map(({ id, category, details, title }) => (
             <Dialog>
-              <DialogTrigger className="text-start">
-                <RecordCardInList
+              <DialogTrigger
+                className="text-start"
+                onClick={() => handleGetRecord(id)}
+              >
+                <RecordCard
                   key={id}
                   title={title}
                   category={category}
@@ -40,17 +62,16 @@ function Home() {
                 />
               </DialogTrigger>
               <DialogContent className="w-[550px]">
-                <RecordCard
-                  id={id}
-                  title={title}
-                  category={category}
-                  details={details}
-                />
+                {loadingRecordId === id ? (
+                  <div>Loading...</div>
+                ) : (
+                  <ChoosenRecordCard />
+                )}
               </DialogContent>
             </Dialog>
           ))
         ) : (
-          <h2 className="text-xl font-semibold">
+          <h2 className="text-xl text-center font-semibold">
             Your List of Records is empty.
           </h2>
         )}
